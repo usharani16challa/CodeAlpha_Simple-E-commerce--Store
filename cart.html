@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shopping Cart</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    ul { list-style-type: none; padding: 0; }
+    li { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Shopping Cart</h2>
+  <ul id="cart-items"></ul>
+  <h3>Total: ₹<span id="total">0</span></h3>
+  <button id="placeOrderBtn">Place Order</button>
+
+  <script>
+    let cart = [];
+    let total = 0;
+
+    // Load cart from localStorage
+    document.addEventListener("DOMContentLoaded", () => {
+      cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const list = document.getElementById('cart-items');
+
+      if (cart.length === 0) {
+        list.innerHTML = "<li>Your cart is empty.</li>";
+      } else {
+        cart.forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = `${item.name} - ₹${item.price}`;
+          list.appendChild(li);
+          total += item.price;
+        });
+        document.getElementById('total').innerText = total;
+      }
+    });
+
+    // Place Order Button Click
+    document.getElementById('placeOrderBtn').addEventListener('click', async () => {
+      if (cart.length === 0) {
+        alert("Cart is empty!");
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:5000/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: "guest", // Replace with real user ID if login system is used
+            products: cart,
+            total: total
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alert(data.message || "Order placed successfully!");
+          localStorage.removeItem('cart');
+          window.location.href = 'index.html';
+        } else {
+          alert("Order failed: " + (data.message || "Unknown error"));
+        }
+
+      } catch (error) {
+        alert("Network error: " + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
